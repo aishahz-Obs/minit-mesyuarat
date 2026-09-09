@@ -20,8 +20,10 @@
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Papan Pemuka</a>
             <a href="{{ url_for('user_files') }}" class="{% if request.endpoint == 'user_files' %}active{% endif %}">Simpanan Saya</a>
-            {% if session.get('peranan') == 'admin' %}
+            {% if session.get('peranan') in ('admin', 'superadmin') %}
             <a href="{{ url_for('kakitangan_list') }}" class="{% if request.endpoint == 'kakitangan_list' %}active{% endif %}">Senarai Kakitangan</a>
+            {% endif %}
+            {% if session.get('peranan') == 'superadmin' %}
             <a href="{{ url_for('admin_pengguna') }}" class="{% if request.endpoint == 'admin_pengguna' %}active{% endif %}">Urus Pengguna</a>
             <a href="{{ url_for('admin_audit') }}" class="{% if request.endpoint == 'admin_audit' %}active{% endif %}">Jejak Audit</a>
             {% endif %}

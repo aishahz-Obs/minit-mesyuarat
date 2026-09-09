@@ -52,8 +52,20 @@ def admin_required(f):
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
-        if session.get('peranan') != 'admin':
+        if session.get('peranan') not in ('admin', 'superadmin'):
             flash('Akses ditolak. Hanya pentadbir sahaja.', 'error')
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def superadmin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        if session.get('peranan') != 'superadmin':
+            flash('Akses ditolak. Hanya pentadbir utama sahaja.', 'error')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated
@@ -243,7 +255,7 @@ def logout():
 # ── Admin ──
 
 @app.route('/admin/pengguna')
-@admin_required
+@superadmin_required
 def admin_pengguna():
     db = get_db()
     users = db.execute("SELECT * FROM pengguna ORDER BY status, created_at DESC").fetchall()
@@ -252,7 +264,7 @@ def admin_pengguna():
 
 
 @app.route('/admin/pengguna/<int:uid>/lulus', methods=['POST'])
-@admin_required
+@superadmin_required
 def admin_lulus(uid):
     db = get_db()
     db.execute("UPDATE pengguna SET status = 'aktif', approved_by = ?, approved_at = datetime('now','localtime') WHERE id = ?",
@@ -267,7 +279,7 @@ def admin_lulus(uid):
 
 
 @app.route('/admin/pengguna/<int:uid>/tolak', methods=['POST'])
-@admin_required
+@superadmin_required
 def admin_tolak(uid):
     db = get_db()
     user = db.execute("SELECT email, nama FROM pengguna WHERE id = ?", (uid,)).fetchone()
@@ -281,7 +293,7 @@ def admin_tolak(uid):
 
 
 @app.route('/admin/pengguna/<int:uid>/reset', methods=['POST'])
-@admin_required
+@superadmin_required
 def admin_reset_password(uid):
     db = get_db()
     user = db.execute("SELECT email, nama FROM pengguna WHERE id = ?", (uid,)).fetchone()
@@ -295,8 +307,30 @@ def admin_reset_password(uid):
     return redirect(url_for('admin_pengguna'))
 
 
+@app.route('/admin/pengguna/<int:uid>/peranan', methods=['POST'])
+@superadmin_required
+def admin_set_peranan(uid):
+    peranan = request.form.get('peranan', 'pengguna')
+    if peranan not in ('pengguna', 'admin'):
+        flash('Peranan tidak sah.', 'error')
+        return redirect(url_for('admin_pengguna'))
+    db = get_db()
+    user = db.execute("SELECT email, nama, peranan FROM pengguna WHERE id = ?", (uid,)).fetchone()
+    if user and user['peranan'] == 'superadmin':
+        db.close()
+        flash('Tidak boleh menukar peranan pentadbir utama.', 'error')
+        return redirect(url_for('admin_pengguna'))
+    db.execute("UPDATE pengguna SET peranan = ? WHERE id = ?", (peranan, uid))
+    db.commit()
+    db.close()
+    log_audit(session['user_id'], session['email'], 'tukar_peranan',
+              f"{user['nama']} ({user['email']}): {user['peranan']} -> {peranan}", get_client_ip())
+    flash(f"Peranan {user['nama']} ditukar kepada {peranan}.", 'success')
+    return redirect(url_for('admin_pengguna'))
+
+
 @app.route('/admin/audit')
-@admin_required
+@superadmin_required
 def admin_audit():
     db = get_db()
     page = request.args.get('page', 1, type=int)
@@ -715,15 +749,30 @@ def kakitangan_list():
     db = get_db()
     staff = db.execute("SELECT * FROM kakitangan ORDER BY jabatan, nama").fetchall()
     jabatan_list = db.execute("SELECT DISTINCT jabatan FROM kakitangan ORDER BY jabatan").fetchall()
+    user_jabatan = ''
+    peranan = session.get('peranan', 'pengguna')
+    if peranan == 'admin':
+        user = db.execute("SELECT jabatan FROM pengguna WHERE id = ?", (session['user_id'],)).fetchone()
+        user_jabatan = user['jabatan'] or '' if user else ''
     db.close()
-    is_admin = session.get('peranan') == 'admin'
-    return render_template('staff.html', staff=staff, jabatan_list=jabatan_list, is_admin=is_admin)
+    can_edit = peranan in ('admin', 'superadmin')
+    return render_template('staff.html', staff=staff, jabatan_list=jabatan_list,
+                           is_admin=can_edit, is_superadmin=(peranan == 'superadmin'),
+                           user_jabatan=user_jabatan)
 
 
 @app.route('/kakitangan/tambah', methods=['POST'])
 @admin_required
 def kakitangan_tambah():
     data = request.get_json()
+    if session.get('peranan') == 'admin':
+        db = get_db()
+        user = db.execute("SELECT jabatan FROM pengguna WHERE id = ?", (session['user_id'],)).fetchone()
+        user_jabatan = user['jabatan'] or '' if user else ''
+        if data.get('jabatan', '') != user_jabatan:
+            db.close()
+            return jsonify({'error': 'Anda hanya boleh menambah kakitangan dalam jabatan anda.'}), 403
+        db.close()
     db = get_db()
     db.execute(
         "INSERT INTO kakitangan (nama, jawatan, jabatan, gelaran, gred) VALUES (?,?,?,?,?)",
@@ -740,6 +789,13 @@ def kakitangan_tambah():
 def kakitangan_kemaskini(staff_id):
     data = request.get_json()
     db = get_db()
+    if session.get('peranan') == 'admin':
+        user = db.execute("SELECT jabatan FROM pengguna WHERE id = ?", (session['user_id'],)).fetchone()
+        user_jabatan = user['jabatan'] or '' if user else ''
+        staff = db.execute("SELECT jabatan FROM kakitangan WHERE id = ?", (staff_id,)).fetchone()
+        if not staff or staff['jabatan'] != user_jabatan:
+            db.close()
+            return jsonify({'error': 'Anda hanya boleh mengemaskini kakitangan dalam jabatan anda.'}), 403
     db.execute(
         "UPDATE kakitangan SET nama=?, jawatan=?, jabatan=?, gelaran=?, gred=? WHERE id=?",
         (data['nama'], data['jawatan'], data.get('jabatan', ''),
@@ -754,6 +810,13 @@ def kakitangan_kemaskini(staff_id):
 @admin_required
 def kakitangan_padam(staff_id):
     db = get_db()
+    if session.get('peranan') == 'admin':
+        user = db.execute("SELECT jabatan FROM pengguna WHERE id = ?", (session['user_id'],)).fetchone()
+        user_jabatan = user['jabatan'] or '' if user else ''
+        staff = db.execute("SELECT jabatan FROM kakitangan WHERE id = ?", (staff_id,)).fetchone()
+        if not staff or staff['jabatan'] != user_jabatan:
+            db.close()
+            return jsonify({'error': 'Anda hanya boleh menyahaktif kakitangan dalam jabatan anda.'}), 403
     db.execute("UPDATE kakitangan SET aktif = 0 WHERE id = ?", (staff_id,))
     db.commit()
     db.close()

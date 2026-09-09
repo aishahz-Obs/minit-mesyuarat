@@ -43,12 +43,16 @@
             </div>
             <div class="form-group">
                 <label>Jabatan</label>
+                {% if is_superadmin %}
                 <input type="text" id="staffJabatan" placeholder="cth: Pembedahan" list="jabatanList">
                 <datalist id="jabatanList">
                     {% for j in jabatan_list %}
                     <option value="{{ j['jabatan'] }}">
                     {% endfor %}
                 </datalist>
+                {% else %}
+                <input type="text" id="staffJabatan" value="{{ user_jabatan }}" readonly style="background:#f0f0f0;">
+                {% endif %}
             </div>
             <div class="form-group">
                 <label>Gred</label>
@@ -103,13 +107,15 @@
                 <td>{{ s['jawatan'] }}</td>
                 <td>{{ s['jabatan'] or '-' }}</td>
                 <td>{{ s['gred'] or '-' }}</td>
-                {% if is_admin %}
+                {% if is_admin and (is_superadmin or (s['jabatan'] or '') == user_jabatan) %}
                 <td class="action-cell">
                     <button class="btn btn-sm btn-secondary" onclick="editKakitangan(this)">Sunting</button>
                     {% if s['aktif'] %}
                     <button class="btn btn-sm btn-danger" onclick="padamKakitangan({{ s['id'] }}, this)">Nyahaktif</button>
                     {% endif %}
                 </td>
+                {% elif is_admin %}
+                <td></td>
                 {% endif %}
             </tr>
             {% endfor %}

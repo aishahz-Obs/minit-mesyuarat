@@ -82,8 +82,8 @@
                     <td>{{ u['email'] }}</td>
                     <td>{{ u['jawatan'] or '-' }}</td>
                     <td>
-                        <span class="badge badge-{{ 'primary' if u['peranan'] == 'admin' else 'default' }}">
-                            {{ u['peranan']|capitalize }}
+                        <span class="badge badge-{{ 'danger' if u['peranan'] == 'superadmin' else ('primary' if u['peranan'] == 'admin' else 'default') }}">
+                            {{ 'Pentadbir Utama' if u['peranan'] == 'superadmin' else ('Pentadbir' if u['peranan'] == 'admin' else 'Pengguna') }}
                         </span>
                     </td>
                     <td>
@@ -100,10 +100,21 @@
                             <button type="submit" class="btn btn-sm btn-danger">Tolak</button>
                         </form>
                         {% endif %}
-                        {% if u['peranan'] != 'admin' %}
+                        {% if u['peranan'] != 'superadmin' %}
                         <form method="POST" action="{{ url_for('admin_reset_password', uid=u['id']) }}" style="display:inline;">
                             <button type="submit" class="btn btn-sm" onclick="return confirm('Reset kata laluan?')">Reset PW</button>
                         </form>
+                        {% if u['peranan'] == 'pengguna' and u['status'] == 'aktif' %}
+                        <form method="POST" action="{{ url_for('admin_set_peranan', uid=u['id']) }}" style="display:inline;">
+                            <input type="hidden" name="peranan" value="admin">
+                            <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Tetapkan sebagai Pentadbir?')">Jadikan Admin</button>
+                        </form>
+                        {% elif u['peranan'] == 'admin' %}
+                        <form method="POST" action="{{ url_for('admin_set_peranan', uid=u['id']) }}" style="display:inline;">
+                            <input type="hidden" name="peranan" value="pengguna">
+                            <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Turun taraf kepada Pengguna?')">Turun Taraf</button>
+                        </form>
+                        {% endif %}
                         {% endif %}
                     </td>
                 </tr>

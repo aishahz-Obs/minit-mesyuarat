@@ -11,8 +11,8 @@
         <div style="margin-bottom:8px;"><strong>Nama:</strong> {{ user['nama'] }}</div>
         <div style="margin-bottom:8px;"><strong>Emel:</strong> {{ user['email'] }}</div>
         <div style="margin-bottom:8px;"><strong>Peranan:</strong>
-            <span class="badge {% if user['peranan'] == 'admin' %}badge-primary{% else %}badge-default{% endif %}">
-                {{ user['peranan']|capitalize }}
+            <span class="badge {% if user['peranan'] == 'superadmin' %}badge-danger{% elif user['peranan'] == 'admin' %}badge-primary{% else %}badge-default{% endif %}">
+                {{ 'Pentadbir Utama' if user['peranan'] == 'superadmin' else ('Pentadbir' if user['peranan'] == 'admin' else 'Pengguna') }}
             </span>
         </div>
     </div>
