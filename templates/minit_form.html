@@ -15,12 +15,18 @@
 <div id="saveStatus" class="save-status" style="display:none"></div>
 
 <!-- Tab Navigation -->
-<div class="tab-nav">
-    <button class="tab-btn active" onclick="showTab('maklumat')">Maklumat Mesyuarat</button>
-    <button class="tab-btn" onclick="showTab('kehadiran')">Kehadiran</button>
-    <button class="tab-btn" onclick="showTab('agenda')">Agenda &amp; Perbincangan</button>
-    <button class="tab-btn" onclick="showTab('maklumbalas')">Maklum Balas</button>
-    <button class="tab-btn" onclick="showTab('penutup')">Penutup</button>
+<div class="tab-nav-wrapper">
+    <button class="tab-nav-toggle" onclick="this.parentElement.classList.toggle('open')">
+        <span id="activeTabLabel">Maklumat Mesyuarat</span>
+        <span class="tab-arrow">&#9662;</span>
+    </button>
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="showTab('maklumat')">Maklumat Mesyuarat</button>
+        <button class="tab-btn" onclick="showTab('kehadiran')">Kehadiran</button>
+        <button class="tab-btn" onclick="showTab('agenda')">Agenda &amp; Perbincangan</button>
+        <button class="tab-btn" onclick="showTab('maklumbalas')">Maklum Balas</button>
+        <button class="tab-btn" onclick="showTab('penutup')">Penutup</button>
+    </div>
 </div>
 
 <!-- Tab: Maklumat Mesyuarat -->

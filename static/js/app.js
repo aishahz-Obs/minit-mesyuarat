@@ -5,6 +5,10 @@ function showTab(tabName) {
     const tab = document.getElementById('tab-' + tabName);
     if (tab) tab.classList.add('active');
     event.target.classList.add('active');
+    const label = document.getElementById('activeTabLabel');
+    if (label) label.textContent = event.target.textContent;
+    const wrapper = document.querySelector('.tab-nav-wrapper');
+    if (wrapper) wrapper.classList.remove('open');
 }
 
 // ── Save Status ──

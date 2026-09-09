@@ -604,7 +604,22 @@ def eksport_docx(minit_id):
 
     doc_buffer.seek(0)
     log_audit(session['user_id'], session['email'], 'eksport_docx',
-              f"Minit ID: {minit_id}", get_client_ip())
+              f"Minit ID: {minit_id} - {minit['tajuk_mesyuarat']} Bil. {minit['bil']}", get_client_ip())
+
+    # HIPAA compliance: purge meeting content from database after export
+    db = get_db()
+    seksyen_ids = db.execute("SELECT id FROM seksyen WHERE minit_id = ?", (minit_id,)).fetchall()
+    for s in seksyen_ids:
+        db.execute("DELETE FROM perkara WHERE seksyen_id = ?", (s['id'],))
+    db.execute("DELETE FROM seksyen WHERE minit_id = ?", (minit_id,))
+    db.execute("DELETE FROM kehadiran WHERE minit_id = ?", (minit_id,))
+    db.execute("DELETE FROM maklumbalas WHERE minit_id = ?", (minit_id,))
+    db.execute("DELETE FROM minit WHERE id = ? AND user_id = ?", (minit_id, session['user_id']))
+    db.commit()
+    db.close()
+    log_audit(session['user_id'], session['email'], 'padam_data_hipaa',
+              f"Data minit ID {minit_id} dipadam selepas eksport (pematuhan HIPAA)", get_client_ip())
+
     return send_file(doc_buffer, as_attachment=True, download_name=filename,
                      mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
@@ -679,11 +694,12 @@ def kakitangan_list():
     staff = db.execute("SELECT * FROM kakitangan ORDER BY jabatan, nama").fetchall()
     jabatan_list = db.execute("SELECT DISTINCT jabatan FROM kakitangan ORDER BY jabatan").fetchall()
     db.close()
-    return render_template('staff.html', staff=staff, jabatan_list=jabatan_list)
+    is_admin = session.get('peranan') == 'admin'
+    return render_template('staff.html', staff=staff, jabatan_list=jabatan_list, is_admin=is_admin)
 
 
 @app.route('/kakitangan/tambah', methods=['POST'])
-@login_required
+@admin_required
 def kakitangan_tambah():
     data = request.get_json()
     db = get_db()
@@ -698,7 +714,7 @@ def kakitangan_tambah():
 
 
 @app.route('/kakitangan/<int:staff_id>/kemaskini', methods=['POST'])
-@login_required
+@admin_required
 def kakitangan_kemaskini(staff_id):
     data = request.get_json()
     db = get_db()
@@ -713,7 +729,7 @@ def kakitangan_kemaskini(staff_id):
 
 
 @app.route('/kakitangan/<int:staff_id>/padam', methods=['POST'])
-@login_required
+@admin_required
 def kakitangan_padam(staff_id):
     db = get_db()
     db.execute("UPDATE kakitangan SET aktif = 0 WHERE id = ?", (staff_id,))

@@ -148,7 +148,7 @@ def init_db():
             """INSERT INTO pengguna (email, password_hash, nama, jawatan, jabatan, peranan, status)
                VALUES (?,?,?,?,?,?,?)""",
             (ADMIN_EMAIL, generate_password_hash(DEFAULT_PASSWORD),
-             'Aisha binti Zakaria', 'Pegawai Tadbir', 'Pentadbiran', 'admin', 'aktif')
+             'Aishah Binti Zubillah', 'Pegawai Tadbir', 'Pentadbiran', 'admin', 'aktif')
         )
 
     # Seed staff if empty

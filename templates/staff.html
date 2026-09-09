@@ -4,9 +4,12 @@
 {% block content %}
 <div class="page-header">
     <h2>Senarai Kakitangan Hospital</h2>
+    {% if is_admin %}
     <button class="btn btn-primary" onclick="showTambahKakitangan()">+ Tambah Kakitangan</button>
+    {% endif %}
 </div>
 
+{% if is_admin %}
 <!-- Add Staff Modal -->
 <div id="modalTambah" class="modal" style="display:none">
     <div class="modal-content">
@@ -58,6 +61,7 @@
         </form>
     </div>
 </div>
+{% endif %}
 
 <!-- Filter -->
 <div class="card" style="margin-bottom:15px">
@@ -85,7 +89,7 @@
                 <th>Jawatan</th>
                 <th>Jabatan</th>
                 <th>Gred</th>
-                <th>Tindakan</th>
+                {% if is_admin %}<th>Tindakan</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -99,12 +103,14 @@
                 <td>{{ s['jawatan'] }}</td>
                 <td>{{ s['jabatan'] or '-' }}</td>
                 <td>{{ s['gred'] or '-' }}</td>
+                {% if is_admin %}
                 <td class="action-cell">
                     <button class="btn btn-sm btn-secondary" onclick="editKakitangan(this)">Sunting</button>
                     {% if s['aktif'] %}
                     <button class="btn btn-sm btn-danger" onclick="padamKakitangan({{ s['id'] }}, this)">Nyahaktif</button>
                     {% endif %}
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -114,6 +120,7 @@
 
 {% block scripts %}
 <script>
+{% if is_admin %}
 function showTambahKakitangan() {
     document.getElementById('modalTitle').textContent = 'Tambah Kakitangan Baru';
     document.getElementById('editStaffId').value = '';
@@ -159,6 +166,7 @@ async function padamKakitangan(id, btn) {
     const resp = await fetch(`/kakitangan/${id}/padam`, { method: 'POST' });
     if (resp.ok) { location.reload(); }
 }
+{% endif %}
 
 function filterStaff() {
     const nama = document.getElementById('filterNama').value.toLowerCase();
