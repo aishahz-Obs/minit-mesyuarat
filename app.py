@@ -15,7 +15,8 @@ from export_docx import generate_docx
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'hsa-minit-mesyuarat-2026-dev')
-app.config['STORAGE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'storage')
+app.config['STORAGE_DIR'] = os.environ.get('STORAGE_DIR',
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'storage'))
 
 init_db()
 
