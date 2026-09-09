@@ -781,6 +781,8 @@ def kakitangan_tambah():
     )
     db.commit()
     db.close()
+    log_audit(session['user_id'], session['email'], 'tambah_kakitangan',
+              f"Tambah: {data['nama']} ({data['jawatan']}, {data.get('jabatan', '')})", get_client_ip())
     return jsonify({'success': True})
 
 
@@ -803,6 +805,8 @@ def kakitangan_kemaskini(staff_id):
     )
     db.commit()
     db.close()
+    log_audit(session['user_id'], session['email'], 'kemaskini_kakitangan',
+              f"Kemaskini ID {staff_id}: {data['nama']} ({data['jawatan']}, {data.get('jabatan', '')})", get_client_ip())
     return jsonify({'success': True})
 
 
@@ -817,9 +821,13 @@ def kakitangan_padam(staff_id):
         if not staff or staff['jabatan'] != user_jabatan:
             db.close()
             return jsonify({'error': 'Anda hanya boleh menyahaktif kakitangan dalam jabatan anda.'}), 403
+    staff = db.execute("SELECT nama, jawatan FROM kakitangan WHERE id = ?", (staff_id,)).fetchone()
     db.execute("UPDATE kakitangan SET aktif = 0 WHERE id = ?", (staff_id,))
     db.commit()
     db.close()
+    staff_nama = staff['nama'] if staff else f'ID {staff_id}'
+    log_audit(session['user_id'], session['email'], 'nyahaktif_kakitangan',
+              f"Nyahaktif: {staff_nama}", get_client_ip())
     return jsonify({'success': True})
 
 
