@@ -210,6 +210,28 @@ def tukar_kata_laluan():
     return render_template('tukar_password.html')
 
 
+@app.route('/profil', methods=['GET', 'POST'])
+@login_required
+def profil():
+    db = get_db()
+    user = db.execute("SELECT * FROM pengguna WHERE id = ?", (session['user_id'],)).fetchone()
+
+    if request.method == 'POST':
+        jawatan = request.form.get('jawatan', '').strip()
+        jabatan = request.form.get('jabatan', '').strip()
+        db.execute("UPDATE pengguna SET jawatan = ?, jabatan = ? WHERE id = ?",
+                   (jawatan, jabatan, session['user_id']))
+        db.commit()
+        db.close()
+        log_audit(session['user_id'], session['email'], 'kemaskini_profil',
+                  f'Jawatan: {jawatan}, Jabatan: {jabatan}', get_client_ip())
+        flash('Profil berjaya dikemaskini.', 'success')
+        return redirect(url_for('profil'))
+
+    db.close()
+    return render_template('profil.html', user=user)
+
+
 @app.route('/logout')
 def logout():
     if 'user_id' in session:

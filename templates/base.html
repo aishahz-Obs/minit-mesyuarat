@@ -27,6 +27,7 @@
             {% endif %}
             <div class="nav-user">
                 <span>{{ g.user['nama'] }}</span>
+                <a href="{{ url_for('profil') }}" class="btn-sm" style="font-size:12px;">Profil Saya</a>
                 <a href="{{ url_for('tukar_kata_laluan') }}" class="btn-sm" style="font-size:12px;">Tukar Kata Laluan</a>
                 <a href="{{ url_for('logout') }}" class="btn-logout">Log Keluar</a>
             </div>
