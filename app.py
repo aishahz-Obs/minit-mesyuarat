@@ -14,8 +14,10 @@ from models import get_db, init_db, seed_default_sections, log_audit, DEFAULT_PA
 from export_docx import generate_docx
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+app.secret_key = os.environ.get('SECRET_KEY', 'hsa-minit-mesyuarat-2026-dev')
 app.config['STORAGE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'storage')
+
+init_db()
 
 HARI_MAP = {
     'Monday': 'Isnin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
@@ -730,5 +732,4 @@ def kakitangan_cari():
 
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, port=5000)
