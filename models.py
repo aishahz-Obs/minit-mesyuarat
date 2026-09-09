@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash
 DB_PATH = os.environ.get('DATABASE_PATH',
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'minit_mesyuarat.db'))
 
+os.makedirs(os.path.dirname(DB_PATH) or '.', exist_ok=True)
+
 ADMIN_EMAIL = 'aishahz@moh.gov.my'
 DEFAULT_PASSWORD = 'HSA@2026'
 
