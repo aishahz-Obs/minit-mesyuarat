@@ -19,6 +19,11 @@ app.config['STORAGE_DIR'] = os.environ.get('STORAGE_DIR',
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'storage'))
 os.makedirs(app.config['STORAGE_DIR'], exist_ok=True)
 
+
+@app.route('/healthz')
+def healthz():
+    return 'OK', 200
+
 init_db()
 
 HARI_MAP = {
