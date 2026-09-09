@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Papan Pemuka{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Papan Pemuka</h2>
+    <a href="{{ url_for('minit_baru') }}" class="btn btn-primary">+ Minit Baru</a>
+</div>
+
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-number">{{ minit_list|length }}</div>
+        <div class="stat-label">Jumlah Minit</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ minit_list|selectattr('status', 'equalto', 'draf')|list|length }}</div>
+        <div class="stat-label">Draf</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ minit_list|selectattr('status', 'equalto', 'selesai')|list|length }}</div>
+        <div class="stat-label">Selesai</div>
+    </div>
+</div>
+
+{% if minit_list %}
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Bil.</th>
+                <th>Tajuk Mesyuarat</th>
+                <th>Bilangan</th>
+                <th>Tarikh</th>
+                <th>Status</th>
+                <th>Dikemas Kini</th>
+                <th>Tindakan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in minit_list %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td><strong>{{ m['tajuk_mesyuarat'] }}</strong></td>
+                <td>{{ m['bil'] }}</td>
+                <td>{{ m['tarikh'] or '-' }}</td>
+                <td>
+                    <span class="badge badge-{{ 'success' if m['status'] == 'selesai' else 'warning' }}">
+                        {{ m['status']|capitalize }}
+                    </span>
+                </td>
+                <td>{{ m['updated_at'][:16] }}</td>
+                <td class="action-cell">
+                    <a href="{{ url_for('minit_edit', minit_id=m['id']) }}" class="btn btn-sm btn-secondary">Sunting</a>
+                    <a href="{{ url_for('minit_preview', minit_id=m['id']) }}" class="btn btn-sm btn-info">Pratonton</a>
+                    <a href="{{ url_for('eksport_docx', minit_id=m['id']) }}" class="btn btn-sm btn-success">DOCX</a>
+                    <form method="POST" action="{{ url_for('minit_padam', minit_id=m['id']) }}"
+                          style="display:inline" onsubmit="return confirm('Adakah anda pasti untuk memadam minit ini?')">
+                        <button type="submit" class="btn btn-sm btn-danger">Padam</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">&#128196;</div>
+    <h3>Tiada Minit Mesyuarat</h3>
+    <p>Klik butang "Minit Baru" untuk mencipta minit mesyuarat pertama anda.</p>
+</div>
+{% endif %}
+{% endblock %}

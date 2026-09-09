@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Senarai Kakitangan{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Senarai Kakitangan Hospital</h2>
+    <button class="btn btn-primary" onclick="showTambahKakitangan()">+ Tambah Kakitangan</button>
+</div>
+
+<!-- Add Staff Modal -->
+<div id="modalTambah" class="modal" style="display:none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Tambah Kakitangan Baru</h3>
+            <button class="modal-close" onclick="tutupModal()">&times;</button>
+        </div>
+        <form id="formKakitangan" onsubmit="simpanKakitangan(event)">
+            <input type="hidden" id="editStaffId" value="">
+            <div class="form-group">
+                <label>Gelaran</label>
+                <select id="staffGelaran">
+                    <option value="">-- Pilih --</option>
+                    <option value="Dr.">Dr.</option>
+                    <option value="Prof.">Prof.</option>
+                    <option value="En.">En.</option>
+                    <option value="Pn.">Pn.</option>
+                    <option value="Cik">Cik</option>
+                    <option value="Dato'">Dato'</option>
+                    <option value="Datin">Datin</option>
+                    <option value="YBhg.">YBhg.</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nama Penuh <span class="required">*</span></label>
+                <input type="text" id="staffNama" required placeholder="cth: Ahmad bin Ibrahim">
+            </div>
+            <div class="form-group">
+                <label>Jawatan <span class="required">*</span></label>
+                <input type="text" id="staffJawatan" required placeholder="cth: Pegawai Perubatan">
+            </div>
+            <div class="form-group">
+                <label>Jabatan</label>
+                <input type="text" id="staffJabatan" placeholder="cth: Pembedahan" list="jabatanList">
+                <datalist id="jabatanList">
+                    {% for j in jabatan_list %}
+                    <option value="{{ j['jabatan'] }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label>Gred</label>
+                <input type="text" id="staffGred" placeholder="cth: UD54">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="button" class="btn btn-secondary" onclick="tutupModal()">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card" style="margin-bottom:15px">
+    <div class="form-row">
+        <div class="form-group flex-2">
+            <input type="text" id="filterNama" placeholder="Cari nama atau jawatan..." oninput="filterStaff()">
+        </div>
+        <div class="form-group flex-1">
+            <select id="filterJabatan" onchange="filterStaff()">
+                <option value="">Semua Jabatan</option>
+                {% for j in jabatan_list %}
+                <option value="{{ j['jabatan'] }}">{{ j['jabatan'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="tblStaff">
+        <thead>
+            <tr>
+                <th>Bil.</th>
+                <th>Nama</th>
+                <th>Jawatan</th>
+                <th>Jabatan</th>
+                <th>Gred</th>
+                <th>Tindakan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in staff %}
+            <tr data-id="{{ s['id'] }}" data-nama="{{ s['nama'] }}" data-jawatan="{{ s['jawatan'] }}"
+                data-jabatan="{{ s['jabatan'] or '' }}" data-gelaran="{{ s['gelaran'] or '' }}"
+                data-gred="{{ s['gred'] or '' }}"
+                class="{{ '' if s['aktif'] else 'inactive-row' }}">
+                <td>{{ loop.index }}</td>
+                <td>{{ s['nama'] }}</td>
+                <td>{{ s['jawatan'] }}</td>
+                <td>{{ s['jabatan'] or '-' }}</td>
+                <td>{{ s['gred'] or '-' }}</td>
+                <td class="action-cell">
+                    <button class="btn btn-sm btn-secondary" onclick="editKakitangan(this)">Sunting</button>
+                    {% if s['aktif'] %}
+                    <button class="btn btn-sm btn-danger" onclick="padamKakitangan({{ s['id'] }}, this)">Nyahaktif</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTambahKakitangan() {
+    document.getElementById('modalTitle').textContent = 'Tambah Kakitangan Baru';
+    document.getElementById('editStaffId').value = '';
+    document.getElementById('formKakitangan').reset();
+    document.getElementById('modalTambah').style.display = 'flex';
+}
+
+function editKakitangan(btn) {
+    const row = btn.closest('tr');
+    document.getElementById('modalTitle').textContent = 'Sunting Kakitangan';
+    document.getElementById('editStaffId').value = row.dataset.id;
+    document.getElementById('staffNama').value = row.dataset.nama;
+    document.getElementById('staffJawatan').value = row.dataset.jawatan;
+    document.getElementById('staffJabatan').value = row.dataset.jabatan;
+    document.getElementById('staffGelaran').value = row.dataset.gelaran;
+    document.getElementById('staffGred').value = row.dataset.gred;
+    document.getElementById('modalTambah').style.display = 'flex';
+}
+
+function tutupModal() {
+    document.getElementById('modalTambah').style.display = 'none';
+}
+
+async function simpanKakitangan(e) {
+    e.preventDefault();
+    const staffId = document.getElementById('editStaffId').value;
+    const data = {
+        nama: document.getElementById('staffNama').value,
+        jawatan: document.getElementById('staffJawatan').value,
+        jabatan: document.getElementById('staffJabatan').value,
+        gelaran: document.getElementById('staffGelaran').value,
+        gred: document.getElementById('staffGred').value
+    };
+    const url = staffId ? `/kakitangan/${staffId}/kemaskini` : '/kakitangan/tambah';
+    const resp = await fetch(url, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+    });
+    if (resp.ok) { location.reload(); }
+}
+
+async function padamKakitangan(id, btn) {
+    if (!confirm('Nyahaktifkan kakitangan ini?')) return;
+    const resp = await fetch(`/kakitangan/${id}/padam`, { method: 'POST' });
+    if (resp.ok) { location.reload(); }
+}
+
+function filterStaff() {
+    const nama = document.getElementById('filterNama').value.toLowerCase();
+    const jabatan = document.getElementById('filterJabatan').value;
+    document.querySelectorAll('#tblStaff tbody tr').forEach(row => {
+        const matchNama = row.dataset.nama.toLowerCase().includes(nama) ||
+                         row.dataset.jawatan.toLowerCase().includes(nama);
+        const matchJabatan = !jabatan || row.dataset.jabatan === jabatan;
+        row.style.display = (matchNama && matchJabatan) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

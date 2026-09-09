@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pratonton - Minit Mesyuarat {{ minit['bil'] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; margin: 0; }
+            .print-page { box-shadow: none; margin: 0; padding: 20mm 25mm; max-width: none; }
+        }
+        .print-page {
+            max-width: 210mm;
+            margin: 20px auto;
+            padding: 20mm 25mm;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-family: 'Arial', sans-serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+        }
+        .print-page h1 { font-size: 14pt; text-align: center; margin-bottom: 5px; }
+        .print-page h2 { font-size: 12pt; text-align: center; margin-bottom: 20px; }
+        .print-page h3 { font-size: 12pt; margin: 15px 0 8px; text-decoration: underline; }
+        .print-page .section-title { font-weight: bold; margin: 20px 0 10px; }
+        .print-page table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .print-page table th, .print-page table td {
+            border: 1px solid #000; padding: 5px 8px; text-align: left; vertical-align: top; font-size: 11pt;
+        }
+        .print-page table th { background: #f0f0f0; font-weight: bold; }
+        .info-table { border: none !important; }
+        .info-table td { border: none !important; padding: 2px 8px; }
+        .info-table td:first-child { width: 80px; font-weight: bold; }
+        .attendance-section { margin: 15px 0; }
+        .attendance-section h4 { font-weight: bold; margin: 10px 0 5px; text-decoration: underline; }
+        .att-table { margin-left: 0; }
+        .att-table td { border: none !important; padding: 2px 5px; vertical-align: top; }
+        .att-table .num-col { width: 30px; text-align: right; padding-right: 8px; }
+        .section-content { margin: 10px 0 10px 20px; }
+        .section-content .item { margin: 5px 0; }
+        .item-num { display: inline; font-weight: normal; }
+        .signature-section { margin-top: 40px; }
+        .sig-row { display: flex; justify-content: space-between; gap: 40px; }
+        .sig-block { flex: 1; }
+        .sig-block .sig-label { font-weight: bold; margin-bottom: 50px; }
+        .sig-block .sig-line { border-top: 1px solid #000; padding-top: 5px; }
+        .page-num { text-align: right; font-size: 10pt; margin-top: 20px; }
+        .tindakan-tag {
+            display: inline-block; background: #e8e8e8; padding: 1px 6px;
+            font-size: 9pt; border-radius: 3px; margin-left: 5px;
+        }
+        .mb-table th { text-align: center; font-size: 10pt; }
+
+        [contenteditable]:hover { background: #fffde7; outline: 1px dashed #ccc; }
+        [contenteditable]:focus { background: #fff9c4; outline: 2px solid #1565c0; }
+    </style>
+</head>
+<body style="background: #e0e0e0; margin: 0;">
+
+    <div class="no-print" style="background:#1565c0; color:white; padding:10px 20px; display:flex; gap:10px; align-items:center; position:sticky; top:0; z-index:100;">
+        <strong>Pratonton Minit Mesyuarat</strong>
+        <span style="flex:1"></span>
+        <span style="font-size:12px; opacity:0.8;">Klik pada teks untuk menyunting secara langsung</span>
+        <button onclick="window.print()" class="btn btn-sm" style="background:white;color:#1565c0">Cetak / PDF</button>
+        <a href="{{ url_for('eksport_docx', minit_id=minit['id']) }}" class="btn btn-sm" style="background:#4caf50;color:white">Eksport DOCX</a>
+        <a href="{{ url_for('minit_edit', minit_id=minit['id']) }}" class="btn btn-sm" style="background:white;color:#1565c0">Kembali Sunting</a>
+    </div>
+
+    <div class="print-page">
+        <!-- Header -->
+        <h1 contenteditable="true">MINIT MESYUARAT {{ minit['tajuk_mesyuarat'] }} BIL. {{ minit['bil'] }}</h1>
+        <h2 contenteditable="true">{{ minit['hospital'] }}</h2>
+
+        <!-- Meeting Info -->
+        <table class="info-table">
+            <tr><td>Tarikh</td><td>:</td><td contenteditable="true">{{ tarikh_formatted or '' }}</td></tr>
+            <tr><td>Masa</td><td>:</td><td contenteditable="true">{{ minit['masa_mula'] or '' }} {{ 'petang' if minit['masa_mula'] and minit['masa_mula'] > '12:00' else 'pagi' }} – {{ minit['masa_tamat'] or '' }} {{ 'petang' if minit['masa_tamat'] and minit['masa_tamat'] > '12:00' else 'pagi' }}</td></tr>
+            <tr><td>Tempat</td><td>:</td><td contenteditable="true">{{ minit['tempat'] or '' }}</td></tr>
+        </table>
+
+        <!-- Kehadiran -->
+        <h3>KEHADIRAN</h3>
+
+        <div class="attendance-section">
+            <h4>HADIR</h4>
+            <table class="att-table">
+                {% for k in kehadiran['hadir'] %}
+                <tr>
+                    <td class="num-col">{{ loop.index }}.</td>
+                    <td>
+                        <span contenteditable="true">{{ k['jawatan'] }}</span>
+                        {% if k['is_pengerusi'] %}<br><strong>Pengerusi</strong>{% endif %}
+                        {% if k['wakil_nama'] %}<br>Diwakili oleh :<br><span contenteditable="true">{{ k['wakil_nama'] }}</span>{% endif %}
+                    </td>
+                    <td contenteditable="true">{{ k['nama'] }}{% if k['wakil_nama'] %}, S.I.S{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        {% if kehadiran['tidak_hadir'] %}
+        <div class="attendance-section">
+            <h4>TIDAK HADIR DENGAN MAAF</h4>
+            <table class="att-table">
+                {% for k in kehadiran['tidak_hadir'] %}
+                <tr>
+                    <td class="num-col">{{ loop.index }}.</td>
+                    <td contenteditable="true">{{ k['jawatan'] }}</td>
+                    <td contenteditable="true">{{ k['nama'] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+
+        {% if kehadiran['turut_hadir'] %}
+        <div class="attendance-section">
+            <h4>TURUT HADIR</h4>
+            <table class="att-table">
+                {% for k in kehadiran['turut_hadir'] %}
+                <tr>
+                    <td class="num-col">{{ loop.index }}.</td>
+                    <td contenteditable="true">{{ k['jawatan'] }}</td>
+                    <td contenteditable="true">{{ k['nama'] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="page-num">M/S | 1</div>
+
+        {% if kehadiran['urus_setia'] %}
+        <div class="attendance-section">
+            <h4>URUS SETIA</h4>
+            <table class="att-table">
+                {% for k in kehadiran['urus_setia'] %}
+                <tr>
+                    <td class="num-col">{{ loop.index }}.</td>
+                    <td contenteditable="true">{{ k['jawatan'] }}</td>
+                    <td contenteditable="true">{{ k['nama'] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% if pencatat %}
+            <p style="margin-top:10px"><strong>Pencatat Minit</strong></p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Seksyen -->
+        {% for item in seksyen %}
+        <div class="section-content">
+            <p class="section-title" contenteditable="true">{{ item.seksyen['nombor_romawi'] }}.&ensp;{{ item.seksyen['tajuk'] }}</p>
+            {% for p in item.perkara %}
+            <div class="item">
+                <p><span class="item-num">{{ p['nombor'] }}.</span>
+                <span contenteditable="true">{{ p['kandungan'] or '' }}</span>
+                {% if p['tindakan'] %}<span class="tindakan-tag">{{ p['tindakan']|capitalize }}</span>{% endif %}
+                {% if p['pegawai'] %}<br><em>Pegawai: <span contenteditable="true">{{ p['pegawai'] }}</span></em>{% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <!-- Signature -->
+        <div class="signature-section">
+            <div class="sig-row">
+                <div class="sig-block">
+                    <p class="sig-label">Disediakan Oleh:</p>
+                    <div class="sig-line">
+                        <p contenteditable="true">{{ pencatat['nama'] if pencatat else '________________' }}</p>
+                        <p contenteditable="true">{{ pencatat['jawatan'] if pencatat else '' }}</p>
+                        <p>Tarikh :</p>
+                    </div>
+                </div>
+                <div class="sig-block">
+                    <p class="sig-label">Disahkan Oleh:</p>
+                    <div class="sig-line">
+                        <p contenteditable="true">{{ pengerusi['nama'] if pengerusi else '________________' }}</p>
+                        <p contenteditable="true">{{ pengerusi['jawatan'] if pengerusi else '' }}{% if pengerusi %} (Pengerusi){% endif %}</p>
+                        <p>Tarikh :</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-num">M/S | 2</div>
+
+        <!-- Maklum Balas -->
+        {% if maklumbalas %}
+        <div style="page-break-before: always;"></div>
+        <h1 style="font-size:12pt; text-align:center;">MAKLUM BALAS MINIT MESYUARAT {{ minit['tajuk_mesyuarat'] }} {{ minit['hospital'] }} BIL {{ minit['bil'] }}</h1>
+
+        <table class="info-table" style="margin-bottom:15px;">
+            <tr><td>TARIKH</td><td>:</td><td>{{ tarikh_formatted }}</td></tr>
+            <tr><td>MASA</td><td>:</td><td>{{ minit['masa_mula'] or '' }} – {{ minit['masa_tamat'] or '' }}</td></tr>
+            <tr><td>TEMPAT</td><td>:</td><td>{{ minit['tempat'] or '' }}</td></tr>
+        </table>
+
+        <table class="mb-table">
+            <thead>
+                <tr>
+                    <th style="width:40px">BIL</th>
+                    <th style="width:80px">NO RUJUKAN MINIT</th>
+                    <th>PERKARA</th>
+                    <th>MAKLUM BALAS<br>Tindakan/Makluman</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mb in maklumbalas %}
+                <tr>
+                    <td style="text-align:center" contenteditable="true">{{ mb['bil'] }}</td>
+                    <td contenteditable="true">{{ mb['no_rujukan'] or '' }}</td>
+                    <td contenteditable="true">{{ mb['perkara'] or '' }}</td>
+                    <td contenteditable="true">{{ mb['tindakan_makluman_1'] or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="page-num">M/S | 3</div>
+        {% endif %}
+    </div>
+</body>
+</html>

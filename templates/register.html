@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran - Sistem Minit Mesyuarat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">&#9878;</div>
+                <h1>Pendaftaran Pengguna</h1>
+                <p>Hospital Shah Alam</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="form-group">
+                    <label for="nama">Nama Penuh <span class="required">*</span></label>
+                    <input type="text" id="nama" name="nama" required placeholder="Masukkan nama penuh">
+                </div>
+                <div class="form-group">
+                    <label for="email">Emel Rasmi (MOH) <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" required placeholder="contoh@moh.gov.my">
+                    <small style="color:#666;">Hanya emel @moh.gov.my dibenarkan</small>
+                </div>
+                <div class="form-group">
+                    <label for="jawatan">Jawatan</label>
+                    <input type="text" id="jawatan" name="jawatan" placeholder="cth: Pegawai Tadbir">
+                </div>
+                <div class="form-group">
+                    <label for="jabatan">Jabatan</label>
+                    <input type="text" id="jabatan" name="jabatan" placeholder="cth: Pentadbiran">
+                </div>
+                <div class="info-box" style="background:#e3f2fd; padding:12px; border-radius:6px; margin-bottom:16px; font-size:13px;">
+                    <strong>Maklumat:</strong> Kata laluan lalai akan diberikan selepas pendaftaran. Akaun anda perlu diluluskan oleh pentadbir sebelum boleh digunakan.
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Daftar</button>
+            </form>
+            <div class="auth-footer">
+                <p>Sudah mempunyai akaun? <a href="{{ url_for('login') }}">Log masuk di sini</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

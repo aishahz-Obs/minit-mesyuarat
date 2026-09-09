@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% block title %}Sunting Minit - {{ minit['tajuk_mesyuarat'] }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Sunting Minit Mesyuarat</h2>
+    <div class="header-actions">
+        <button onclick="simpanMinit()" class="btn btn-primary" id="btnSimpan">Simpan</button>
+        <a href="{{ url_for('minit_preview', minit_id=minit['id']) }}" class="btn btn-info" target="_blank">Pratonton</a>
+        <a href="{{ url_for('eksport_docx', minit_id=minit['id']) }}" class="btn btn-success">Eksport DOCX</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Kembali</a>
+    </div>
+</div>
+
+<div id="saveStatus" class="save-status" style="display:none"></div>
+
+<!-- Tab Navigation -->
+<div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('maklumat')">Maklumat Mesyuarat</button>
+    <button class="tab-btn" onclick="showTab('kehadiran')">Kehadiran</button>
+    <button class="tab-btn" onclick="showTab('agenda')">Agenda &amp; Perbincangan</button>
+    <button class="tab-btn" onclick="showTab('maklumbalas')">Maklum Balas</button>
+    <button class="tab-btn" onclick="showTab('penutup')">Penutup</button>
+</div>
+
+<!-- Tab: Maklumat Mesyuarat -->
+<div id="tab-maklumat" class="tab-content active">
+    <div class="card">
+        <h3>Maklumat Mesyuarat</h3>
+        <div class="form-row">
+            <div class="form-group flex-2">
+                <label>Tajuk Mesyuarat</label>
+                <input type="text" id="tajuk_mesyuarat" value="{{ minit['tajuk_mesyuarat'] }}">
+            </div>
+            <div class="form-group flex-1">
+                <label>Bilangan</label>
+                <input type="text" id="bil" value="{{ minit['bil'] }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Hospital</label>
+            <input type="text" id="hospital" value="{{ minit['hospital'] }}">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Tarikh</label>
+                <input type="date" id="tarikh" value="{{ minit['tarikh'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Masa Mula</label>
+                <input type="time" id="masa_mula" value="{{ minit['masa_mula'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Masa Tamat</label>
+                <input type="time" id="masa_tamat" value="{{ minit['masa_tamat'] or '' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Tempat</label>
+            <input type="text" id="tempat" value="{{ minit['tempat'] or '' }}">
+        </div>
+    </div>
+</div>
+
+<!-- Tab: Kehadiran -->
+<div id="tab-kehadiran" class="tab-content">
+    <div class="card">
+        <h3>Carian Kakitangan</h3>
+        <div class="search-bar">
+            <input type="text" id="cariKakitangan" placeholder="Cari nama, jawatan, atau jabatan..."
+                   oninput="cariStaff(this.value)">
+        </div>
+        <div id="hasilCarian" class="search-results" style="display:none"></div>
+    </div>
+
+    <!-- HADIR -->
+    <div class="card">
+        <div class="card-header">
+            <h3>HADIR</h3>
+            <button class="btn btn-sm btn-primary" onclick="tambahKehadiranManual('hadir')">+ Tambah Manual</button>
+        </div>
+        <div id="senarai-hadir" class="attendance-list">
+            {% for k in kehadiran['hadir'] %}
+            <div class="attendance-item" data-kategori="hadir">
+                <div class="attendance-info">
+                    <span class="attendance-num">{{ loop.index }}.</span>
+                    <div class="attendance-detail">
+                        <input type="text" class="inline-input att-jawatan" value="{{ k['jawatan'] }}" placeholder="Jawatan">
+                        <input type="text" class="inline-input att-nama" value="{{ k['nama'] }}" placeholder="Nama">
+                        <input type="hidden" class="att-kid" value="{{ k['kakitangan_id'] or '' }}">
+                    </div>
+                </div>
+                <div class="attendance-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="att-pengerusi" {{ 'checked' if k['is_pengerusi'] }}>
+                        Pengerusi
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="att-pencatat" {{ 'checked' if k['is_pencatat'] }}>
+                        Pencatat
+                    </label>
+                    <div class="wakil-section">
+                        <label class="small-label">Diwakili oleh:</label>
+                        <input type="text" class="inline-input att-wakil-nama" value="{{ k['wakil_nama'] or '' }}" placeholder="Nama wakil">
+                        <input type="text" class="inline-input att-wakil-jawatan" value="{{ k['wakil_jawatan'] or '' }}" placeholder="Jawatan wakil">
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="buangKehadiran(this)">Buang</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TIDAK HADIR DENGAN MAAF -->
+    <div class="card">
+        <div class="card-header">
+            <h3>TIDAK HADIR DENGAN MAAF</h3>
+            <button class="btn btn-sm btn-primary" onclick="tambahKehadiranManual('tidak_hadir')">+ Tambah Manual</button>
+        </div>
+        <div id="senarai-tidak_hadir" class="attendance-list">
+            {% for k in kehadiran['tidak_hadir'] %}
+            <div class="attendance-item" data-kategori="tidak_hadir">
+                <div class="attendance-info">
+                    <span class="attendance-num">{{ loop.index }}.</span>
+                    <div class="attendance-detail">
+                        <input type="text" class="inline-input att-jawatan" value="{{ k['jawatan'] }}" placeholder="Jawatan">
+                        <input type="text" class="inline-input att-nama" value="{{ k['nama'] }}" placeholder="Nama">
+                        <input type="hidden" class="att-kid" value="{{ k['kakitangan_id'] or '' }}">
+                    </div>
+                </div>
+                <div class="attendance-options">
+                    <button class="btn btn-sm btn-danger" onclick="buangKehadiran(this)">Buang</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TURUT HADIR -->
+    <div class="card">
+        <div class="card-header">
+            <h3>TURUT HADIR</h3>
+            <button class="btn btn-sm btn-primary" onclick="tambahKehadiranManual('turut_hadir')">+ Tambah Manual</button>
+        </div>
+        <div id="senarai-turut_hadir" class="attendance-list">
+            {% for k in kehadiran['turut_hadir'] %}
+            <div class="attendance-item" data-kategori="turut_hadir">
+                <div class="attendance-info">
+                    <span class="attendance-num">{{ loop.index }}.</span>
+                    <div class="attendance-detail">
+                        <input type="text" class="inline-input att-jawatan" value="{{ k['jawatan'] }}" placeholder="Jawatan">
+                        <input type="text" class="inline-input att-nama" value="{{ k['nama'] }}" placeholder="Nama">
+                        <input type="hidden" class="att-kid" value="{{ k['kakitangan_id'] or '' }}">
+                    </div>
+                </div>
+                <div class="attendance-options">
+                    <button class="btn btn-sm btn-danger" onclick="buangKehadiran(this)">Buang</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- URUS SETIA -->
+    <div class="card">
+        <div class="card-header">
+            <h3>URUS SETIA</h3>
+            <button class="btn btn-sm btn-primary" onclick="tambahKehadiranManual('urus_setia')">+ Tambah Manual</button>
+        </div>
+        <div id="senarai-urus_setia" class="attendance-list">
+            {% for k in kehadiran['urus_setia'] %}
+            <div class="attendance-item" data-kategori="urus_setia">
+                <div class="attendance-info">
+                    <span class="attendance-num">{{ loop.index }}.</span>
+                    <div class="attendance-detail">
+                        <input type="text" class="inline-input att-jawatan" value="{{ k['jawatan'] }}" placeholder="Jawatan">
+                        <input type="text" class="inline-input att-nama" value="{{ k['nama'] }}" placeholder="Nama">
+                        <input type="hidden" class="att-kid" value="{{ k['kakitangan_id'] or '' }}">
+                    </div>
+                </div>
+                <div class="attendance-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="att-pencatat" {{ 'checked' if k['is_pencatat'] }}>
+                        Pencatat Minit
+                    </label>
+                    <button class="btn btn-sm btn-danger" onclick="buangKehadiran(this)">Buang</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Tab: Agenda & Perbincangan -->
+<div id="tab-agenda" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h3>Seksyen Mesyuarat</h3>
+            <button class="btn btn-primary" onclick="tambahSeksyen()">+ Tambah Seksyen</button>
+        </div>
+    </div>
+
+    <div id="seksyen-container">
+        {% for item in seksyen %}
+        <div class="card section-card" data-seksyen-idx="{{ loop.index0 }}">
+            <div class="section-header">
+                <div class="section-title-row">
+                    <input type="text" class="inline-input seksyen-romawi" value="{{ item.seksyen['nombor_romawi'] }}"
+                           placeholder="I" style="width:60px; text-align:center; font-weight:bold">
+                    <span class="section-dot">.</span>
+                    <input type="text" class="inline-input seksyen-tajuk" value="{{ item.seksyen['tajuk'] }}"
+                           placeholder="Tajuk Seksyen" style="font-weight:bold; text-transform:uppercase">
+                </div>
+                <div class="section-actions">
+                    <button class="btn btn-sm btn-primary" onclick="tambahPerkara(this)">+ Perkara</button>
+                    <button class="btn btn-sm btn-danger" onclick="buangSeksyen(this)">Buang Seksyen</button>
+                </div>
+            </div>
+            <div class="perkara-container">
+                {% for p in item.perkara %}
+                <div class="perkara-item">
+                    <div class="perkara-header">
+                        <span class="perkara-num">{{ p['nombor'] }}.</span>
+                        <button class="btn btn-xs btn-danger" onclick="buangPerkara(this)">x</button>
+                    </div>
+                    <div class="perkara-body">
+                        <textarea class="perkara-kandungan" placeholder="Kandungan perbincangan..." rows="3">{{ p['kandungan'] or '' }}</textarea>
+                        <div class="perkara-action-row">
+                            <div class="form-group">
+                                <label class="small-label">Tindakan</label>
+                                <select class="perkara-tindakan">
+                                    <option value="">-- Pilih Tindakan --</option>
+                                    <option value="makluman" {{ 'selected' if p['tindakan'] == 'makluman' }}>Untuk Makluman</option>
+                                    <option value="tindakan" {{ 'selected' if p['tindakan'] == 'tindakan' }}>Untuk Tindakan</option>
+                                    <option value="keputusan" {{ 'selected' if p['tindakan'] == 'keputusan' }}>Keputusan</option>
+                                    <option value="perbincangan" {{ 'selected' if p['tindakan'] == 'perbincangan' }}>Untuk Perbincangan</option>
+                                    <option value="cadangan" {{ 'selected' if p['tindakan'] == 'cadangan' }}>Cadangan</option>
+                                    <option value="ulasan" {{ 'selected' if p['tindakan'] == 'ulasan' }}>Ulasan</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="small-label">Pegawai Bertanggungjawab</label>
+                                <input type="text" class="perkara-pegawai" value="{{ p['pegawai'] or '' }}"
+                                       placeholder="Nama pegawai">
+                            </div>
+                            <div class="form-group">
+                                <label class="small-label">Status</label>
+                                <select class="perkara-status">
+                                    <option value="baru" {{ 'selected' if p['status_tindakan'] == 'baru' }}>Baru</option>
+                                    <option value="dalam_tindakan" {{ 'selected' if p['status_tindakan'] == 'dalam_tindakan' }}>Dalam Tindakan</option>
+                                    <option value="selesai" {{ 'selected' if p['status_tindakan'] == 'selesai' }}>Selesai</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Tab: Maklum Balas -->
+<div id="tab-maklumbalas" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h3>Maklum Balas Minit Mesyuarat</h3>
+            <button class="btn btn-primary" onclick="tambahMaklumBalas()">+ Tambah Baris</button>
+        </div>
+        <div class="table-container">
+            <table class="data-table" id="tblMaklumBalas">
+                <thead>
+                    <tr>
+                        <th style="width:50px">Bil</th>
+                        <th style="width:100px">No. Rujukan Minit</th>
+                        <th>Perkara</th>
+                        <th>Tindakan/Makluman 1</th>
+                        <th>Tindakan/Makluman 2</th>
+                        <th style="width:50px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mb in maklumbalas %}
+                    <tr>
+                        <td><input type="text" class="table-input mb-bil" value="{{ mb['bil'] }}" style="width:40px"></td>
+                        <td><input type="text" class="table-input mb-rujukan" value="{{ mb['no_rujukan'] or '' }}"></td>
+                        <td><textarea class="table-input mb-perkara" rows="2">{{ mb['perkara'] or '' }}</textarea></td>
+                        <td><textarea class="table-input mb-tindakan1" rows="2">{{ mb['tindakan_makluman_1'] or '' }}</textarea></td>
+                        <td><textarea class="table-input mb-tindakan2" rows="2">{{ mb['tindakan_makluman_2'] or '' }}</textarea></td>
+                        <td><button class="btn btn-xs btn-danger" onclick="buangMaklumBalas(this)">x</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Tab: Penutup -->
+<div id="tab-penutup" class="tab-content">
+    <div class="card">
+        <h3>Maklumat Penutup</h3>
+        <p class="info-text">Bahagian ini dijana secara automatik berdasarkan maklumat kehadiran.
+        Sila pastikan Pengerusi dan Pencatat Minit telah ditandakan di tab Kehadiran.</p>
+
+        <div class="signature-preview">
+            <div class="form-row">
+                <div class="form-group">
+                    <h4>Disediakan Oleh:</h4>
+                    <div class="signature-line">
+                        <div class="line"></div>
+                        <p id="pencatat-nama" class="sig-name">
+                            {% for k in kehadiran['hadir'] + kehadiran['urus_setia'] %}
+                                {% if k['is_pencatat'] %}{{ k['nama'] }}{% endif %}
+                            {% endfor %}
+                        </p>
+                        <p id="pencatat-jawatan" class="sig-title">
+                            {% for k in kehadiran['hadir'] + kehadiran['urus_setia'] %}
+                                {% if k['is_pencatat'] %}{{ k['jawatan'] }}{% endif %}
+                            {% endfor %}
+                        </p>
+                        <p>Tarikh :</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <h4>Disahkan Oleh:</h4>
+                    <div class="signature-line">
+                        <div class="line"></div>
+                        <p id="pengerusi-nama" class="sig-name">
+                            {% for k in kehadiran['hadir'] %}
+                                {% if k['is_pengerusi'] %}{{ k['nama'] }}{% endif %}
+                            {% endfor %}
+                        </p>
+                        <p id="pengerusi-jawatan" class="sig-title">
+                            {% for k in kehadiran['hadir'] %}
+                                {% if k['is_pengerusi'] %}{{ k['jawatan'] }} (Pengerusi){% endif %}
+                            {% endfor %}
+                        </p>
+                        <p>Tarikh :</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="minitId" value="{{ minit['id'] }}">
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const MINIT_ID = {{ minit['id'] }};
+    const ROMAWI = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+</script>
+{% endblock %}

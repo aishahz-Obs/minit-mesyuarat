@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Jejak Audit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Jejak Audit</h2>
+    <p style="color:#666;">Log aktiviti pengguna sistem</p>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarikh & Masa</th>
+                    <th>Pengguna</th>
+                    <th>Tindakan</th>
+                    <th>Butiran</th>
+                    <th>Alamat IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="white-space:nowrap;">{{ log['created_at'][:19] if log['created_at'] else '-' }}</td>
+                    <td>{{ log['user_email'] or '-' }}</td>
+                    <td>
+                        <span class="badge badge-default">{{ log['tindakan'] }}</span>
+                    </td>
+                    <td>{{ log['butiran'] or '-' }}</td>
+                    <td>{{ log['ip_address'] or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('admin_audit', page=page-1) }}" class="btn btn-sm">&laquo; Sebelum</a>
+        {% endif %}
+        <span style="padding:8px;">Halaman {{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="{{ url_for('admin_audit', page=page+1) }}" class="btn btn-sm">Seterusnya &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

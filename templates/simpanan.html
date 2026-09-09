@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Simpanan Saya{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Simpanan Saya</h2>
+    <p style="color:#666;">Fail yang telah dieksport dan disimpan</p>
+</div>
+
+<div class="card">
+    {% if files %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nama Fail</th>
+                    <th>Saiz (KB)</th>
+                    <th>Tarikh Diubah</th>
+                    <th>Tindakan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in files %}
+                <tr>
+                    <td>{{ f.name }}</td>
+                    <td>{{ f.size }}</td>
+                    <td>{{ f.modified }}</td>
+                    <td>
+                        <a href="{{ url_for('muat_turun_fail', filename=f.name) }}" class="btn btn-sm btn-primary">Muat Turun</a>
+                        <form method="POST" action="{{ url_for('padam_fail', filename=f.name) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Padam fail ini?')">Padam</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:40px; color:#999;">
+        <p style="font-size:48px;">&#128193;</p>
+        <p>Tiada fail tersimpan. Eksport minit mesyuarat dalam format DOCX untuk menyimpan di sini.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

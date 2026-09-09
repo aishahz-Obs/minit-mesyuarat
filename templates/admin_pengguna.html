@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Urus Pengguna{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Pengurusan Pengguna</h2>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-num">{{ users|selectattr('status', 'equalto', 'menunggu')|list|length }}</div>
+        <div class="stat-label">Menunggu Kelulusan</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ users|selectattr('status', 'equalto', 'aktif')|list|length }}</div>
+        <div class="stat-label">Pengguna Aktif</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ users|selectattr('status', 'equalto', 'ditolak')|list|length }}</div>
+        <div class="stat-label">Ditolak</div>
+    </div>
+</div>
+
+{% set menunggu = users|selectattr('status', 'equalto', 'menunggu')|list %}
+{% if menunggu %}
+<div class="card" style="margin-bottom:20px; border-left:4px solid #ff9800;">
+    <h3 style="color:#e65100;">Permohonan Menunggu Kelulusan ({{ menunggu|length }})</h3>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Emel</th>
+                    <th>Jawatan</th>
+                    <th>Jabatan</th>
+                    <th>Tarikh Daftar</th>
+                    <th>Tindakan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in menunggu %}
+                <tr>
+                    <td>{{ u['nama'] }}</td>
+                    <td>{{ u['email'] }}</td>
+                    <td>{{ u['jawatan'] or '-' }}</td>
+                    <td>{{ u['jabatan'] or '-' }}</td>
+                    <td>{{ u['created_at'][:16] if u['created_at'] else '-' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin_lulus', uid=u['id']) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-success">Luluskan</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin_tolak', uid=u['id']) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Tolak</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Semua Pengguna</h3>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Emel</th>
+                    <th>Jawatan</th>
+                    <th>Peranan</th>
+                    <th>Status</th>
+                    <th>Tindakan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u['nama'] }}</td>
+                    <td>{{ u['email'] }}</td>
+                    <td>{{ u['jawatan'] or '-' }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'primary' if u['peranan'] == 'admin' else 'default' }}">
+                            {{ u['peranan']|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if u['status'] == 'aktif' else ('warning' if u['status'] == 'menunggu' else 'danger') }}">
+                            {{ u['status']|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if u['status'] == 'menunggu' %}
+                        <form method="POST" action="{{ url_for('admin_lulus', uid=u['id']) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-success">Lulus</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin_tolak', uid=u['id']) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Tolak</button>
+                        </form>
+                        {% endif %}
+                        {% if u['peranan'] != 'admin' %}
+                        <form method="POST" action="{{ url_for('admin_reset_password', uid=u['id']) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm" onclick="return confirm('Reset kata laluan?')">Reset PW</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
